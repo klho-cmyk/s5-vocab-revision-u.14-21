@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vocabulary Revision (Units 14–21)</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #000000;
+      --muted: #555555;
+      --border: #000000;
+      --subtle: #cccccc;
+      --surface: #fafafa;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "PingFang HK", "Microsoft JhengHei", sans-serif;
+      line-height: 1.6;
+      padding: 24px 16px;
+      display: flex;
+      justify-content: center;
+    }
+    .container { width: 100%; max-width: 760px; }
+    .box { border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
+    .box ul { margin: 14px 0 18px 20px; }
+    .box li { margin-bottom: 8px; }
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .badge {
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+    }
+    .q-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .q-text { font-size: 1.15rem; font-weight: 600; margin-bottom: 18px; }
+    .options { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    button.opt-btn {
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--border);
+      padding: 13px 15px;
+      text-align: left;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    button.opt-btn:hover:not(:disabled) { background: var(--fg); color: var(--bg); }
+    button.opt-btn:disabled { cursor: default; }
+    button.opt-btn.wrong { background: var(--fg); color: var(--bg); text-decoration: line-through; }
+    button.opt-btn.correct { border: 2px solid var(--border); font-weight: 700; }
+    .feedback {
+      margin-top: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 18px;
+    }
+    .feedback-title {
+      font-weight: 700;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--subtle);
+    }
+    .exp-item { margin-bottom: 10px; font-size: 0.92rem; }
+    .exp-zh { display: block; color: var(--muted); margin-top: 2px; }
+    .btn-main {
+      background: var(--fg);
+      color: var(--bg);
+      border: 1px solid var(--border);
+      padding: 11px 22px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 14px;
+    }
+    .btn-main:hover { background: var(--bg); color: var(--fg); }
+    .hidden { display: none; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat { border: 1px solid var(--border); padding: 14px; }
+    .stat-val { font-size: 1.5rem; font-weight: 700; }
+    .stat-lbl { font-size: 0.8rem; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.9rem; }
+    th, td { border: 1px solid var(--border); padding: 9px 11px; text-align: left; vertical-align: top; }
+    th { background: var(--surface); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section id="intro-screen" class="box">
+      <p><strong>Revision Guide / 練習導讀</strong></p>
+      <ul>
+        <li><strong>Mastery Completion:</strong> The session continues until every question is answered correctly; missed or timed-out items return later in the queue. (必須答對全部題目才會完成；答錯或逾時的題目會重新排隊再測。)</li>
+        <li><strong>Difficulty Timers:</strong> Each item has a countdown based on difficulty (Easy = 15s, Medium = 22s, Hard = 30s). (依難度設有時限：簡易 15 秒、中等 22 秒、進階 30 秒。)</li>
+        <li><strong>Bilingual Explanations:</strong> When an answer is incorrect or time runs out, English and Chinese explanations are shown for all choices. (答錯或時間到時，會顯示各選項的中英雙語解析。)</li>
+        <li><strong>End Summary:</strong> A summary report appears after all items are mastered. (完成所有題目後會顯示作答總結。)</li>
+      </ul>
+      <button type="button" class="btn-main" id="start-btn">Start / 開始</button>
+    </section>
+
+    <section id="quiz-screen" class="hidden">
+      <div class="status-bar">
+        <div>Mastered: <span id="mastered-num">0</span> / 30</div>
+        <div>Remaining: <span id="rem-num">30</span></div>
+        <div id="timer-box">Time: 15s</div>
+      </div>
+
+      <div class="box">
+        <div class="q-meta">
+          <span id="q-label">1 / 30</span>
+          <span class="badge" id="q-diff">Easy • 15s</span>
+        </div>
+        <div class="q-text" id="q-text"></div>
+        <div class="options" id="options-box"></div>
+      </div>
+
+      <div id="feedback-box" class="feedback hidden">
+        <div class="feedback-title" id="feedback-title"></div>
+        <div id="exp-list"></div>
+        <button type="button" class="btn-main" id="next-btn">Next / 下一題</button>
+      </div>
+    </section>
+
+    <section id="summary-screen" class="hidden">
+      <h2 style="margin-bottom: 14px;">Summary / 總結</h2>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-val" id="sum-first">0 / 30</div>
+          <div class="stat-lbl">First-Try / 首次答對</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="sum-attempts">30</div>
+          <div class="stat-lbl">Attempts / 作答次數</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="sum-time">0m 0s</div>
+          <div class="stat-lbl">Time / 用時</div>
+        </div>
+      </div>
+      <p style="font-weight: 600;">Review / 重溫題目：</p>
+      <div id="review-area"></div>
+      <button type="button" class="btn-main" id="restart-btn">Restart / 重新開始</button>
+    </section>
+  </div>
+
+  <script>
+    const QUESTIONS = [
+      { id: 1, q: "The curious ________ was just beginning to walk and kept stumbling around the living room.", options: ["A. adult", "B. toddler", "C. patient", "D. widow"], answer: 1, diff: "Easy", sec: 15, exp: [
+        { en: "A. adult (n.): a fully grown person.", zh: "A. adult（成年人）：剛學走路、搖搖晃晃的多為幼童而非成人。" },
+        { en: "B. toddler (n.): [Correct] a young child who is just learning to walk.", zh: "B. toddler（學步期的幼童）：【正確答案】剛開始學走路、在客廳跌跌撞撞的幼兒。" },
+        { en: "C. patient (n.): a person receiving medical treatment.", zh: "C. patient（病人）：與學走路語境不符。" },
+        { en: "D. widow (n.): a woman whose spouse has died.", zh: "D. widow（寡婦）：與句意無關。" }
+      ]},
+      { id: 2, q: "After forty years of hard work, my grandfather is looking forward to his upcoming ________.", options: ["A. retirement", "B. reception", "C. loan", "D. ceremony"], answer: 0, diff: "Easy", sec: 15, exp: [
+        { en: "A. retirement (n.): [Correct] leaving one's job and ceasing to work, typically due to age.", zh: "A. retirement（退休）：【正確答案】工作四十年後迎來退休生活。" },
+        { en: "B. reception (n.): a formal party or welcome area.", zh: "B. reception（招待會／接待處）：不合句意。" },
+        { en: "C. loan (n.): money borrowed that must be repaid.", zh: "C. loan（貸款）：與工作四十年後無關。" },
+        { en: "D. ceremony (n.): a formal religious or public occasion.", zh: "D. ceremony（典禮）：不如 retirement 貼切。" }
+      ]},
+      { id: 3, q: "We should always show consideration and offer our seats on public transport to ________ passengers.", options: ["A. pregnant", "B. divorced", "C. casual", "D. elderly"], answer: 3, diff: "Easy", sec: 15, exp: [
+        { en: "A. pregnant (adj.): carrying a developing baby (grammatically possible, but 'elderly' is the target vocabulary item here).", zh: "A. pregnant（懷孕的）：雖然在公共交通讓座亦合理，但本題詞彙重點為長者。" },
+        { en: "B. divorced (adj.): no longer married.", zh: "B. divorced（已離婚的）：與讓座無關。" },
+        { en: "C. casual (adj.): relaxed and informal.", zh: "C. casual（隨意的；非正式的）：不能形容乘客類別。" },
+        { en: "D. elderly (adj.): [Correct] old or ageing people.", zh: "D. elderly（年長的；長者的）：【正確答案】在公共交通工具上展現關懷，讓座予年長乘客。" }
+      ]},
+      { id: 4, q: "His parents are quite ________ and do not allow him to stay out past nine o'clock on school nights.", options: ["A. charming", "B. spare", "C. strict", "D. stylish"], answer: 2, diff: "Easy", sec: 15, exp: [
+        { en: "A. charming (adj.): pleasant and attractive.", zh: "A. charming（迷人的）：與門禁時間規定無關。" },
+        { en: "B. spare (adj.): extra or available.", zh: "B. spare（多餘的；備用的）：不合語境。" },
+        { en: "C. strict (adj.): [Correct] demanding that rules are obeyed.", zh: "C. strict（嚴格的）：【正確答案】上學日晚上九點後不准外出，體現父母管教嚴格。" },
+        { en: "D. stylish (adj.): fashionable.", zh: "D. stylish（時髦的）：不合句意。" }
+      ]},
+      { id: 5, q: "The school rules do not ________ students to use mobile phones during lessons.", options: ["A. rent", "B. allow", "C. afford", "D. bother"], answer: 1, diff: "Easy", sec: 15, exp: [
+        { en: "A. rent (v.): to pay to use property temporarily.", zh: "A. rent（租用）：不合校規語境。" },
+        { en: "B. allow (v.): [Correct] to permit ('allow someone to do something').", zh: "B. allow（允許）：【正確答案】校規不允許學生上課時使用手提電話（allow sb to do）。" },
+        { en: "C. afford (v.): to have enough money for.", zh: "C. afford（負擔得起）：與校規無關。" },
+        { en: "D. bother (v.): to make the effort to do something.", zh: "D. bother（費心；麻煩）：不合句型搭配。" }
+      ]},
+      { id: 6, q: "They got ________ during a romantic holiday in Paris and plan to marry next summer.", options: ["A. divorced", "B. casual", "C. engaged", "D. smart"], answer: 2, diff: "Easy", sec: 15, exp: [
+        { en: "A. divorced (adj.): legally ended a marriage.", zh: "A. divorced（離婚的）：與「計劃明年夏天結婚」矛盾。" },
+        { en: "B. casual (adj.): informal.", zh: "B. casual（隨便的）：不合文意。" },
+        { en: "C. engaged (adj.): [Correct] having formally agreed to marry ('get engaged').", zh: "C. engaged（訂婚的）：【正確答案】在浪漫假期中訂婚，並計劃明年夏天結婚（get engaged）。" },
+        { en: "D. smart (adj.): neat or intelligent.", zh: "D. smart（整潔的；聰明的）：不合語境。" }
+      ]},
+      { id: 7, q: "Today is my grandparents' golden wedding ________, celebrating fifty years of happy marriage.", options: ["A. ceremony", "B. anniversary", "C. reception", "D. deposit"], answer: 1, diff: "Medium", sec: 22, exp: [
+        { en: "A. ceremony (n.): a formal event.", zh: "A. ceremony（典禮）：結婚五十週年紀念日用 anniversary。" },
+        { en: "B. anniversary (n.): [Correct] the date on which an event took place in a previous year ('golden wedding anniversary' = 50th).", zh: "B. anniversary（週年紀念日）：【正確答案】金婚紀念日（golden wedding anniversary）即慶祝結婚五十週年。" },
+        { en: "C. reception (n.): a social gathering after a formal event.", zh: "C. reception（招待會）：指宴會而非紀念日本身。" },
+        { en: "D. deposit (n.): a sum paid as a first instalment or security.", zh: "D. deposit（按金；訂金）：與結婚紀念日無關。" }
+      ]},
+      { id: 8, q: "Following the wedding ceremony in the church, guests were invited to a grand evening ________ at the hotel.", options: ["A. honeymoon", "B. location", "C. housework", "D. reception"], answer: 3, diff: "Easy", sec: 15, exp: [
+        { en: "A. honeymoon (n.): a holiday taken by newlyweds.", zh: "A. honeymoon（蜜月旅行）：賓客不會一同去蜜月。" },
+        { en: "B. location (n.): a particular place or position.", zh: "B. location（地點）：不合「盛大的晚間……」搭配。" },
+        { en: "C. housework (n.): regular household chores.", zh: "C. housework（家務）：與婚禮賓客無關。" },
+        { en: "D. reception (n.): [Correct] a formal party held after a wedding.", zh: "D. reception（婚宴；招待會）：【正確答案】教堂婚禮儀式後，在酒店設盛大晚宴招待賓客。" }
+      ]},
+      { id: 9, q: "After watching the late movie, I felt so exhausted that I fell asleep ________.", options: ["A. in credit", "B. straight away", "C. out of order", "D. on the outskirts"], answer: 1, diff: "Easy", sec: 15, exp: [
+        { en: "A. in credit (phr.): having money in a bank/account.", zh: "A. in credit（帳戶有餘額）：與入睡無關。" },
+        { en: "B. straight away (phr.): [Correct] immediately or without delay.", zh: "B. straight away（立即；馬上）：【正確答案】看完深夜電影後極度疲倦，立刻睡著了。" },
+        { en: "C. out of order (phr.): not working properly (for machines).", zh: "C. out of order（故障；失靈）：多用於機器。" },
+        { en: "D. on the outskirts (phr.): in the outer area of a town/city.", zh: "D. on the outskirts（在市郊）：形容地點，不合句意。" }
+      ]},
+      { id: 10, q: "Neither of us wanted to cook tonight, so we ordered a spicy noodle ________ from the local diner.", options: ["A. takeaway", "B. deposit", "C. dish", "D. loan"], answer: 0, diff: "Easy", sec: 15, exp: [
+        { en: "A. takeaway (n.): [Correct] a meal cooked and bought to be eaten elsewhere.", zh: "A. takeaway（外賣餐點）：【正確答案】兩人都不想煮飯，便向附近餐廳叫了辣麵外賣。" },
+        { en: "B. deposit (n.): down payment or bank deposit.", zh: "B. deposit（按金／存款）：不合點餐語境。" },
+        { en: "C. dish (n.): food prepared in a particular way (less specific to ordering out than 'takeaway' here).", zh: "C. dish（菜餚）：不如 takeaway 貼切表達「不想煮飯而外帶／外賣」。" },
+        { en: "D. loan (n.): borrowed money.", zh: "D. loan（貸款）：不合句意。" }
+      ]},
+      { id: 11, q: "She was too tired after work to ________ making a full dinner, so she just had toast.", options: ["A. afford", "B. bother", "C. waste", "D. share"], answer: 1, diff: "Medium", sec: 22, exp: [
+        { en: "A. afford (v.): to have enough money/time (usually 'afford to do', not 'afford doing' in this sense).", zh: "A. afford（負擔得起）：搭配與語意均不貼切。" },
+        { en: "B. bother (v.): [Correct] to take the trouble to do something ('bother doing').", zh: "B. bother（費心；懶得）：【正確答案】下班太累而懶得花心思做整頓晚餐（bother doing）。" },
+        { en: "C. waste (v.): to use carelessly or extravagantly.", zh: "C. waste（浪費）：不合「太累而不做晚飯」的邏輯。" },
+        { en: "D. share (v.): to have or use with others.", zh: "D. share（分享）：不合句意。" }
+      ]},
+      { id: 12, q: "On Friday evenings, we prefer to ________ and relax with a good book instead of going to crowded malls.", options: ["A. wake up", "B. eat out", "C. stay in", "D. put on"], answer: 2, diff: "Easy", sec: 15, exp: [
+        { en: "A. wake up (phr. v.): to stop sleeping.", zh: "A. wake up（醒來）：與晚上看書放鬆不符。" },
+        { en: "B. eat out (phr. v.): to dine at a restaurant.", zh: "B. eat out（外出用膳）：與「不去擁擠商場、看書放鬆」不符。" },
+        { en: "C. stay in (phr. v.): [Correct] to remain at home rather than go out.", zh: "C. stay in（留在家中）：【正確答案】星期五晚上寧願留在家中看書放鬆，也不去人多商場。" },
+        { en: "D. put on (phr. v.): to wear clothes/shoes or gain weight.", zh: "D. put on（穿上／增加）：不合句意。" }
+      ]},
+      { id: 13, q: "For special family celebrations, our parents usually prefer to ________ at an Italian restaurant.", options: ["A. take off", "B. eat out", "C. change into", "D. get dressed"], answer: 1, diff: "Easy", sec: 15, exp: [
+        { en: "A. take off (phr. v.): to remove clothing or lift off.", zh: "A. take off（脫下／起飛）：不合餐廳慶祝語境。" },
+        { en: "B. eat out (phr. v.): [Correct] to eat a meal away from home, especially at a restaurant.", zh: "B. eat out（外出用膳）：【正確答案】家庭特別慶祝時，父母通常喜歡到意大利餐廳外出用餐。" },
+        { en: "C. change into (phr. v.): to put on different clothes.", zh: "C. change into（換上）：不合句意。" },
+        { en: "D. get dressed (phr. v.): to put on clothes.", zh: "D. get dressed（穿衣）：不合語境。" }
+      ]},
+      { id: 14, q: "They decided to purchase a quiet house on the ________ of town, far from the busy city traffic.", options: ["A. turning", "B. outskirts", "C. location", "D. ground floor"], answer: 1, diff: "Medium", sec: 22, exp: [
+        { en: "A. turning (n.): a road leading off another.", zh: "A. turning（路口；轉彎處）：不與 far from busy city traffic 搭配。" },
+        { en: "B. outskirts (n.): [Correct] the outer parts of a town or city ('on the outskirts of...').", zh: "B. outskirts（市郊；城郊）：【正確答案】on the outskirts of town 指市郊，遠離繁忙交通。" },
+        { en: "C. location (n.): a place or site.", zh: "C. location（位置）：單用 location 無法表達「市郊邊緣」。" },
+        { en: "D. ground floor (n.): the floor of a building at street level.", zh: "D. ground floor（地下／一樓）：形容樓層，不合句意。" }
+      ]},
+      { id: 15, q: "The balcony of our hotel room offered a magnificent ________ of the blue ocean.", options: ["A. view", "B. location", "C. cushion", "D. currency"], answer: 0, diff: "Easy", sec: 15, exp: [
+        { en: "A. view (n.): [Correct] what can be seen from a particular place ('a view of...').", zh: "A. view（景觀；視野）：【正確答案】酒店房間露台可飽覽蔚藍大海的壯麗景觀。" },
+        { en: "B. location (n.): geographic position.", zh: "B. location（位置）：不指從露台望出去的景色。" },
+        { en: "C. cushion (n.): a soft pillow/pad.", zh: "C. cushion（靠墊）：與大海景觀無關。" },
+        { en: "D. currency (n.): money system of a country.", zh: "D. currency（貨幣）：與景觀無關。" }
+      ]},
+      { id: 16, q: "The old village cottage was very ________, featuring a flower garden and a stone fireplace.", options: ["A. stylish", "B. strict", "C. charming", "D. spare"], answer: 2, diff: "Easy", sec: 15, exp: [
+        { en: "A. stylish (adj.): fashionable or chic.", zh: "A. stylish（時髦的）：多形容現代穿搭或設計，不如 charming 貼切鄉村小屋。" },
+        { en: "B. strict (adj.): demanding obedience.", zh: "B. strict（嚴格的）：不能形容小屋。" },
+        { en: "C. charming (adj.): [Correct] pleasant, attractive, and full of character.", zh: "C. charming（迷人的；可愛的）：【正確答案】配有花圃和石砌壁爐的鄉村小屋十分迷人。" },
+        { en: "D. spare (adj.): extra.", zh: "D. spare（多餘的）：不合文意。" }
+      ]},
+      { id: 17, q: "Because the building has efficient ________, the apartment stays warm and cosy even in midwinter.", options: ["A. central heating", "B. spare room", "C. utility room", "D. ground floor"], answer: 0, diff: "Medium", sec: 22, exp: [
+        { en: "A. central heating (n. phr.): [Correct] a system that heats a whole building from one central source.", zh: "A. central heating（中央暖氣系統）：【正確答案】高效的中央暖氣令公寓在隆冬仍溫暖舒適。" },
+        { en: "B. spare room (n.): an extra bedroom.", zh: "B. spare room（客房／備用房）：指房間而非暖氣設備。" },
+        { en: "C. utility room (n.): a room for laundry and household equipment.", zh: "C. utility room（雜物間／洗衣房）：不直接提供全屋暖氣。" },
+        { en: "D. ground floor (n.): street-level floor.", zh: "D. ground floor（地下／一樓）：與保暖系統無關。" }
+      ]},
+      { id: 18, q: "If you have guests staying over for the weekend, they can sleep in our ________.", options: ["A. utility room", "B. spare room", "C. apartment", "D. reception"], answer: 1, diff: "Easy", sec: 15, exp: [
+        { en: "A. utility room (n.): room for washing/storage.", zh: "A. utility room（雜物間）：不適合安排客人留宿睡覺。" },
+        { en: "B. spare room (n.): [Correct] an extra bedroom used for guests or storage.", zh: "B. spare room（客房；備用房間）：【正確答案】週末有客人留宿時，可安排睡在備用房間／客房。" },
+        { en: "C. apartment (n.): a self-contained flat.", zh: "C. apartment（公寓）：指整套住宅而非家中的客房。" },
+        { en: "D. reception (n.): front desk or party.", zh: "D. reception（接待處）：不合文意。" }
+      ]},
+      { id: 19, q: "Washing powder, ironing boards, and cleaning supplies are usually stored in the ________ next to the kitchen.", options: ["A. ground floor", "B. en-suite", "C. utility room", "D. outskirts"], answer: 2, diff: "Easy", sec: 15, exp: [
+        { en: "A. ground floor (n.): bottom floor.", zh: "A. ground floor（地下／一樓）：不是存放清潔用品的房間。" },
+        { en: "B. en-suite (adj./n.): attached private bathroom.", zh: "B. en-suite（套房浴室）：非存放洗衣粉與燙衣板之處。" },
+        { en: "C. utility room (n.): [Correct] a room for laundry, cleaning items, and household tasks.", zh: "C. utility room（雜物間／家務室）：【正確答案】洗衣粉、燙衣板和清潔用品通常放在廚房旁的雜物間。" },
+        { en: "D. outskirts (n.): outer edge of a town.", zh: "D. outskirts（市郊）：不合文意。" }
+      ]},
+      { id: 20, q: "Each bedroom in the luxury hotel includes a private, modern ________ bathroom.", options: ["A. en-suite", "B. spare", "C. casual", "D. central"], answer: 0, diff: "Medium", sec: 22, exp: [
+        { en: "A. en-suite (adj.): [Correct] directly connected to and for the exclusive use of one bedroom.", zh: "A. en-suite（套房附設的）：【正確答案】酒店每間客房均附設私人現代化套房浴室。" },
+        { en: "B. spare (adj.): extra.", zh: "B. spare（備用的）：不準確表達房間直通浴室。" },
+        { en: "C. casual (adj.): informal.", zh: "C. casual（隨意的）：不合浴室修飾語。" },
+        { en: "D. central (adj.): main or in the middle.", zh: "D. central（中央的）：不指私人附屬浴室。" }
+      ]},
+      { id: 21, q: "Before travelling abroad to Japan, remember to exchange some local money for foreign ________.", options: ["A. deposit", "B. currency", "C. loan", "D. credit"], answer: 1, diff: "Easy", sec: 15, exp: [
+        { en: "A. deposit (n.): down payment or bank deposit.", zh: "A. deposit（按金／存款）：出國兌換的是外幣。" },
+        { en: "B. currency (n.): [Correct] the money system in use in a country ('foreign currency').", zh: "B. currency（貨幣；外幣）：【正確答案】出國去日本前需兌換外幣（foreign currency）。" },
+        { en: "C. loan (n.): borrowed money.", zh: "C. loan（貸款）：不合兌換外幣語境。" },
+        { en: "D. credit (n.): credit balance or borrowing limit.", zh: "D. credit（信用額／餘額）：不合句意。" }
+      ]},
+      { id: 22, q: "He took out a student ________ from the bank to help cover the costs of his university tuition fees.", options: ["A. deposit", "B. refund", "C. currency", "D. loan"], answer: 3, diff: "Easy", sec: 15, exp: [
+        { en: "A. deposit (n.): money placed into an account or as security.", zh: "A. deposit（存款／按金）：向銀行借錢繳付學費屬於貸款。" },
+        { en: "B. refund (n.): money returned after a purchase.", zh: "B. refund（退款）：不是支付學費的借貸。" },
+        { en: "C. currency (n.): country's money.", zh: "C. currency（貨幣）：不合「學生……」搭配。" },
+        { en: "D. loan (n.): [Correct] a sum of money borrowed from a bank ('take out a loan').", zh: "D. loan（貸款）：【正確答案】向銀行申請學生貸款（take out a student loan）以支付大學學費。" }
+      ]},
+      { id: 23, q: "It is polite to pay back the money you ________ to your friends as soon as possible.", options: ["A. save up", "B. afford", "C. owe", "D. waste"], answer: 2, diff: "Easy", sec: 15, exp: [
+        { en: "A. save up (phr. v.): to accumulate money for future use.", zh: "A. save up（儲蓄）：與「盡快還錢給朋友」不符。" },
+        { en: "B. afford (v.): to be able to pay for.", zh: "B. afford（負擔得起）：不合「欠朋友的錢」語意。" },
+        { en: "C. owe (v.): [Correct] to have an obligation to pay money back to someone.", zh: "C. owe（欠；虧欠）：【正確答案】盡快把「欠」朋友的錢還清是有禮貌的做法。" },
+        { en: "D. waste (v.): to spend carelessly.", zh: "D. waste（浪費）：不合句意。" }
+      ]},
+      { id: 24, q: "Both brothers are trying to ________ enough pocket money to buy a new gaming computer.", options: ["A. waste", "B. save up", "C. put on", "D. rent"], answer: 1, diff: "Easy", sec: 15, exp: [
+        { en: "A. waste (v.): to squander money.", zh: "A. waste（浪費）：浪費零用錢無法買到電腦。" },
+        { en: "B. save up (phr. v.): [Correct] to keep money over time for a specific goal.", zh: "B. save up（儲蓄；存錢）：【正確答案】兩兄弟都在努力存夠零用錢購買新的電競電腦。" },
+        { en: "C. put on (phr. v.): to wear or gain weight.", zh: "C. put on（穿上／增重）：不合零用錢語境。" },
+        { en: "D. rent (v.): to hire/lease.", zh: "D. rent（租用）：不合句意。" }
+      ]},
+      { id: 25, q: "The second-hand laptop was in mint condition and reasonably priced, making it exceptional ________.", options: ["A. value for money", "B. cashpoint", "C. in credit", "D. deposit"], answer: 0, diff: "Medium", sec: 22, exp: [
+        { en: "A. value for money (n. phr.): [Correct] well worth the price paid.", zh: "A. value for money（物有所值；性價比高）：【正確答案】近乎全新且價格合理，代表非常物有所值。" },
+        { en: "B. cashpoint (n.): an ATM machine.", zh: "B. cashpoint（自動櫃員機）：與手提電腦評價無關。" },
+        { en: "C. in credit (phr.): having positive funds.", zh: "C. in credit（帳戶有餘額）：不合句意。" },
+        { en: "D. deposit (n.): initial payment or deposit.", zh: "D. deposit（按金）：不合文意。" }
+      ]},
+      { id: 26, q: "I need to stop at an outdoor ________ to withdraw some emergency cash for the market.", options: ["A. reception", "B. turn", "C. cashpoint", "D. deposit"], answer: 2, diff: "Easy", sec: 15, exp: [
+        { en: "A. reception (n.): front desk or party.", zh: "A. reception（接待處／宴會）：不能提款。" },
+        { en: "B. turn (n.): a change of direction or chance.", zh: "B. turn（轉彎／輪次）：不能提款。" },
+        { en: "C. cashpoint (n.): [Correct] an automated teller machine (ATM) for withdrawing cash.", zh: "C. cashpoint（自動櫃員機／提款機）：【正確答案】在戶外提款機提取應急現金去逛市集。" },
+        { en: "D. deposit (n.): down payment or bank deposit.", zh: "D. deposit（存款／按金）：不是提款機。" }
+      ]},
+      { id: 27, q: "Drinking warm honey water with lemon can help soothe a painful ________.", options: ["A. temperature", "B. sore throat", "C. bandage", "D. cough"], answer: 1, diff: "Easy", sec: 15, exp: [
+        { en: "A. temperature (n.): body heat/fever level.", zh: "A. temperature（體溫）：溫蜂蜜檸檬水主要舒緩喉嚨不適。" },
+        { en: "B. sore throat (n. phr.): [Correct] pain or irritation in the throat.", zh: "B. sore throat（喉嚨痛）：【正確答案】喝溫熱的檸檬蜂蜜水有助舒緩喉嚨痛。" },
+        { en: "C. bandage (n.): cloth strip used to bind a wound.", zh: "C. bandage（繃帶）：是醫療敷料，非身體痛症。" },
+        { en: "D. cough (n.): expelling air from lungs with a sound.", zh: "D. cough（咳嗽）：sore throat 是「痛症」，最合適搭配 painful。" }
+      ]},
+      { id: 28, q: "The nurse checked his high ________ with a thermometer to see if the fever had come down.", options: ["A. temperature", "B. sore throat", "C. ache", "D. operation"], answer: 0, diff: "Easy", sec: 15, exp: [
+        { en: "A. temperature (n.): [Correct] degree of heat in the body ('high temperature' = fever).", zh: "A. temperature（體溫）：【正確答案】用溫度計（thermometer）量度高燒／體溫（high temperature）。" },
+        { en: "B. sore throat (n. phr.): throat pain.", zh: "B. sore throat（喉嚨痛）：不用溫度計檢查是否退燒。" },
+        { en: "C. ache (n.): continuous dull pain.", zh: "C. ache（隱痛／痠痛）：與溫度計量度退燒無關。" },
+        { en: "D. operation (n.): surgical procedure.", zh: "D. operation（手術）：不合句意。" }
+      ]},
+      { id: 29, q: "She began to ________ violently whenever she entered rooms filled with dust and pollen.", options: ["A. ache", "B. swallow", "C. yawn", "D. cough"], answer: 3, diff: "Hard", sec: 30, exp: [
+        { en: "A. ache (v.): to feel continuous pain.", zh: "A. ache（疼痛）：吸入灰塵和花粉通常引發咳嗽而非「疼痛」。" },
+        { en: "B. swallow (v.): to pass food/liquid down the throat.", zh: "B. swallow（吞嚥）：與灰塵、花粉刺激無關。" },
+        { en: "C. yawn (v.): to open mouth wide when sleepy/bored.", zh: "C. yawn（打呵欠）：與灰塵、花粉無關。" },
+        { en: "D. cough (v.): [Correct] to push air out of the lungs suddenly, often due to irritation.", zh: "D. cough（咳嗽）：【正確答案】進入充滿灰塵和花粉的房間時，呼吸道受刺激而劇烈咳嗽。" }
+      ]},
+      { id: 30, q: "A team of skilled surgeons performed a delicate heart ________ that lasted for six hours.", options: ["A. operation", "B. disease", "C. bandage", "D. condition"], answer: 0, diff: "Easy", sec: 15, exp: [
+        { en: "A. operation (n.): [Correct] a medical procedure involving cutting open the body ('perform an operation').", zh: "A. operation（手術）：【正確答案】外科醫生團隊進行了長達六小時精細的心臟手術。" },
+        { en: "B. disease (n.): an illness affecting people/animals/plants.", zh: "B. disease（疾病）：醫生是「進行」手術而非「進行疾病」。" },
+        { en: "C. bandage (n.): dressing for wounds.", zh: "C. bandage（繃帶）：不合句意。" },
+        { en: "D. condition (n.): state of health.", zh: "D. condition（健康狀況）：不合動詞 perform 搭配。" }
+      ]}
+    ];
+
+    let queue = [];
+    let currentQ = null;
+    let timerId = null;
+    let timeLeft = 0;
+    let attemptsTotal = 0;
+    let startMs = 0;
+    let stats = {};
+
+    function startGame() {
+      queue = QUESTIONS.slice();
+      attemptsTotal = 0;
+      startMs = Date.now();
+      stats = {};
+      for (let i = 0; i < QUESTIONS.length; i++) {
+        stats[QUESTIONS[i].id] = { attempts: 0, missed: false };
+      }
+      document.getElementById("intro-screen").classList.add("hidden");
+      document.getElementById("summary-screen").classList.add("hidden");
+      document.getElementById("quiz-screen").classList.remove("hidden");
+      renderQuestion();
+    }
+
+    function updateCounts() {
+      const mastered = QUESTIONS.length - queue.length;
+      document.getElementById("mastered-num").textContent = String(mastered);
+      document.getElementById("rem-num").textContent = String(queue.length);
+    }
+
+    function renderQuestion() {
+      if (queue.length === 0) {
+        showSummary();
+        return;
+      }
+      updateCounts();
+      currentQ = queue[0];
+      document.getElementById("feedback-box").classList.add("hidden");
+
+      const retry = stats[currentQ.id].attempts > 0;
+      document.getElementById("q-label").textContent =
+        String(currentQ.id) + " / 30" + (retry ? " (Retry)" : "");
+      document.getElementById("q-diff").textContent = currentQ.diff + " • " + currentQ.sec + "s";
+      document.getElementById("q-text").textContent = currentQ.q;
+
+      const optBox = document.getElementById("options-box");
+      optBox.innerHTML = "";
+      for (let idx = 0; idx < currentQ.options.length; idx++) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "opt-btn";
+        btn.textContent = currentQ.options[idx];
+        btn.addEventListener("click", function() {
+          chooseOption(idx);
+        });
+        optBox.appendChild(btn);
+      }
+
+      runTimer(currentQ.sec);
+    }
+
+    function runTimer(seconds) {
+      clearInterval(timerId);
+      timeLeft = seconds;
+      document.getElementById("timer-box").textContent = "Time: " + timeLeft + "s";
+      timerId = setInterval(function() {
+        timeLeft--;
+        document.getElementById("timer-box").textContent = "Time: " + timeLeft + "s";
+        if (timeLeft <= 0) {
+          clearInterval(timerId);
+          timeExpired();
+        }
+      }, 1000);
+    }
+
+    function chooseOption(idx) {
+      clearInterval(timerId);
+      attemptsTotal++;
+      stats[currentQ.id].attempts++;
+
+      const btns = document.querySelectorAll(".opt-btn");
+      for (let i = 0; i < btns.length; i++) {
+        btns[i].disabled = true;
+      }
+
+      if (idx === currentQ.answer) {
+        btns[idx].classList.add("correct");
+        queue.shift();
+        updateCounts();
+        setTimeout(renderQuestion, 350);
+      } else {
+        stats[currentQ.id].missed = true;
+        btns[idx].classList.add("wrong");
+        btns[currentQ.answer].classList.add("correct");
+        const missedItem = queue.shift();
+        queue.push(missedItem);
+        updateCounts();
+        showFeedback("Incorrect / 答錯了");
+      }
+    }
+
+    function timeExpired() {
+      attemptsTotal++;
+      stats[currentQ.id].attempts++;
+      stats[currentQ.id].missed = true;
+
+      const btns = document.querySelectorAll(".opt-btn");
+      for (let i = 0; i < btns.length; i++) {
+        btns[i].disabled = true;
+      }
+      btns[currentQ.answer].classList.add("correct");
+      const expiredItem = queue.shift();
+      queue.push(expiredItem);
+      updateCounts();
+      showFeedback("Time's Up / 時間到");
+    }
+
+    function showFeedback(title) {
+      document.getElementById("feedback-title").textContent = title;
+      const list = document.getElementById("exp-list");
+      list.innerHTML = "";
+      for (let i = 0; i < currentQ.exp.length; i++) {
+        const row = document.createElement("div");
+        row.className = "exp-item";
+        row.innerHTML = "<div>" + currentQ.exp[i].en + "</div><span class=\"exp-zh\">" + currentQ.exp[i].zh + "</span>";
+        list.appendChild(row);
+      }
+      document.getElementById("feedback-box").classList.remove("hidden");
+    }
+
+    function showSummary() {
+      clearInterval(timerId);
+      document.getElementById("quiz-screen").classList.add("hidden");
+      document.getElementById("summary-screen").classList.remove("hidden");
+
+      const secElapsed = Math.floor((Date.now() - startMs) / 1000);
+      const mins = Math.floor(secElapsed / 60);
+      const secs = secElapsed % 60;
+      const firstTry = QUESTIONS.filter(function(q) { return !stats[q.id].missed; }).length;
+
+      document.getElementById("sum-first").textContent = firstTry + " / 30";
+      document.getElementById("sum-attempts").textContent = String(attemptsTotal);
+      document.getElementById("sum-time").textContent = mins + "m " + secs + "s";
+
+      const missedList = QUESTIONS.filter(function(q) { return stats[q.id].missed; });
+      const area = document.getElementById("review-area");
+
+      if (missedList.length === 0) {
+        area.innerHTML = "<p style=\"margin-top:8px;\">100% First-Try Accuracy. (全部 30 題首次作答即全對。)</p>";
+        return;
+      }
+
+      let html = "<table><thead><tr><th>#</th><th>Question</th><th>Answer</th><th>Attempts</th></tr></thead><tbody>";
+      for (let i = 0; i < missedList.length; i++) {
+        const item = missedList[i];
+        html += "<tr><td>" + item.id + "</td><td>" + item.q + "</td><td><strong>" + item.options[item.answer] + "</strong></td><td>" + stats[item.id].attempts + "</td></tr>";
+      }
+      html += "</tbody></table>";
+      area.innerHTML = html;
+    }
+
+    document.getElementById("start-btn").addEventListener("click", startGame);
+    document.getElementById("next-btn").addEventListener("click", renderQuestion);
+    document.getElementById("restart-btn").addEventListener("click", function() {
+      location.reload();
+    });
+  </script>
+</body>
+</html>
