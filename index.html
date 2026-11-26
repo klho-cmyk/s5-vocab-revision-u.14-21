@@ -526,6 +526,7 @@
   }
 
   .summary-actions { margin-top: 28px; }
+  .summary-actions .btn { width: 100%; }
 
   @media (max-width: 420px) {
     .intro-foot .btn, .summary-actions .btn { width: 100%; }
@@ -872,6 +873,7 @@
     mastered: new Set(),
     firstTryCorrect: new Set(),
     attemptsById: {},
+    expiredById: {},
     lastResultById: {},
     currentQ: null,
     isRetry: false,
@@ -1100,6 +1102,7 @@
     const q = state.currentQ;
     state.totalAttempts += 1;
     state.attemptsById[q.id] = (state.attemptsById[q.id] || 0) + 1;
+    state.expiredById[q.id] = true;
     state.lastResultById[q.id] = { status: "expired", chosen: null };
     state.queue.push({ id: q.id, retry: true });
 
@@ -1136,10 +1139,12 @@
     } else {
       els.reviewArea.innerHTML = missedItems.map(q => {
         const tries = state.attemptsById[q.id] || 1;
+        const attemptsLabel = tries === 1 ? "1 attempt" : `${tries} attempts`;
+        const expiredBadge = state.expiredById[q.id] ? `<span class="tag tag-retry">Timed out / 逾時</span>` : "";
         const last = state.lastResultById[q.id];
         const yourAnswerText = last && last.status === "expired"
-          ? "Time expired / 逾時未答"
-          : (last && typeof last.chosen === "number" ? q.options[last.chosen] : "—");
+          ? "No answer / 未作答"
+          : (last && typeof last.chosen === "number" ? q.options[last.chosen] : "No answer / 未作答");
         const correctText = q.options[q.answer];
 
         const expHtml = q.exp.map((item, idx) => `
@@ -1156,21 +1161,22 @@
             <div class="review-head">
               <span class="review-id">Item ${q.id}</span>
               <span class="tag">${q.diff}</span>
-              <span>Attempts / 次數: ${tries}</span>
+              <span class="tag">${attemptsLabel}</span>
+              ${expiredBadge}
             </div>
             <p class="review-q">${q.q}</p>
             <dl class="kv">
               <div class="kv-row is-err">
-                <dt>Last attempt / 最後作答</dt>
+                <dt>Your answer / 你的選擇</dt>
                 <dd>${yourAnswerText}</dd>
               </div>
               <div class="kv-row is-ok">
-                <dt>Correct / 正確答案</dt>
+                <dt>Correct answer / 正確答案</dt>
                 <dd>${correctText}</dd>
               </div>
             </dl>
             <details class="exp-toggle">
-              <summary>Explanation / 中英解析</summary>
+              <summary>Explanations / 中英雙語解析</summary>
               <ol class="exp-list">${expHtml}</ol>
             </details>
           </article>
@@ -1189,6 +1195,7 @@
       mastered: new Set(),
       firstTryCorrect: new Set(),
       attemptsById: {},
+      expiredById: {},
       lastResultById: {},
       currentQ: null,
       isRetry: false,
