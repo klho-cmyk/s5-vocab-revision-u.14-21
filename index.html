@@ -874,7 +874,7 @@
     firstTryCorrect: new Set(),
     attemptsById: {},
     expiredById: {},
-    lastResultById: {},
+    firstResultById: {},
     currentQ: null,
     isRetry: false,
     answered: false,
@@ -1069,8 +1069,10 @@
 
     if (isCorrect) {
       state.mastered.add(q.id);
-      if (isFirstAttempt) state.firstTryCorrect.add(q.id);
-      state.lastResultById[q.id] = { status: "correct", chosen: chosenIdx };
+      if (isFirstAttempt) {
+        state.firstTryCorrect.add(q.id);
+        state.firstResultById[q.id] = { status: "correct", chosen: chosenIdx };
+      }
       updateHud();
 
       if (state.queue.length === 0) {
@@ -1081,7 +1083,9 @@
       return;
     }
 
-    state.lastResultById[q.id] = { status: "wrong", chosen: chosenIdx };
+    if (isFirstAttempt) {
+      state.firstResultById[q.id] = { status: "wrong", chosen: chosenIdx };
+    }
     state.queue.push({ id: q.id, retry: true });
 
     els.feedbackBox.classList.remove("is-expired");
@@ -1102,8 +1106,11 @@
     const q = state.currentQ;
     state.totalAttempts += 1;
     state.attemptsById[q.id] = (state.attemptsById[q.id] || 0) + 1;
+    const isFirstAttempt = state.attemptsById[q.id] === 1;
     state.expiredById[q.id] = true;
-    state.lastResultById[q.id] = { status: "expired", chosen: null };
+    if (isFirstAttempt) {
+      state.firstResultById[q.id] = { status: "expired", chosen: null };
+    }
     state.queue.push({ id: q.id, retry: true });
 
     revealOptions(null, true);
@@ -1141,10 +1148,10 @@
         const tries = state.attemptsById[q.id] || 1;
         const attemptsLabel = tries === 1 ? "1 attempt" : `${tries} attempts`;
         const expiredBadge = state.expiredById[q.id] ? `<span class="tag tag-retry">Timed out / 逾時</span>` : "";
-        const last = state.lastResultById[q.id];
-        const yourAnswerText = last && last.status === "expired"
+        const first = state.firstResultById[q.id];
+        const yourAnswerText = first && first.status === "expired"
           ? "No answer / 未作答"
-          : (last && typeof last.chosen === "number" ? q.options[last.chosen] : "No answer / 未作答");
+          : (first && typeof first.chosen === "number" ? q.options[first.chosen] : "No answer / 未作答");
         const correctText = q.options[q.answer];
 
         const expHtml = q.exp.map((item, idx) => `
@@ -1196,7 +1203,7 @@
       firstTryCorrect: new Set(),
       attemptsById: {},
       expiredById: {},
-      lastResultById: {},
+      firstResultById: {},
       currentQ: null,
       isRetry: false,
       answered: false,
